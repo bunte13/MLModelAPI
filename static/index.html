@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Action Recognition Prediction Stream</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #121212;
+            color: #f0f0f0;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        h1 {
+    color: #333;
+    font-size: 5vw; /* Responsive font size based on viewport width */
+    margin: 0.5em 0; /* Responsive top and bottom margin */
+    text-align: center;
+        }
+
+        /* Media query for tablets and small desktops */
+        @media (min-width: 768px) {
+            h1 {
+                font-size: 3.5vw; /* Slightly smaller on larger screens */
+            }
+        }
+
+        /* Media query for large desktops */
+        @media (min-width: 1200px) {
+            h1 {
+                font-size: 2.5vw; /* Even smaller on large screens */
+            }
+        }
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 20px;
+        }
+        #controls {
+            margin: 20px 0;
+            display: flex;
+            gap: 15px;
+        }
+        button {
+            padding: 12px 24px;
+            font-size: 16px;
+            cursor: pointer;
+            border: none;
+            border-radius: 8px;
+            background-color: #007bff;
+            color: white;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            transition: background-color 0.3s, transform 0.2s, box-shadow 0.3s;
+        }
+        button:disabled {
+            background-color: #555;
+            cursor: not-allowed;
+        }
+        button:hover:not(:disabled) {
+            background-color: #0056b3;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+        }
+        img {
+            width: 100%;
+            max-width: 640px;
+            height: auto;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+            margin-top: 20px;
+        }
+        #status {
+            margin-top: 10px;
+            font-size: 1.1rem;
+            font-weight: 500;
+            text-align: center;
+        }
+        #darkModeToggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            padding: 8px 16px;
+            font-size: 14px;
+            border-radius: 8px;
+            cursor: pointer;
+            background-color: #282828;
+            color: #f0f0f0;
+            transition: background-color 0.3s;
+        }
+        #darkModeToggle:hover {
+            background-color: #3a3a3a;
+        }
+    </style>
+</head>
+<body>
+    <button id="darkModeToggle">Toggle Dark Mode</button>
+    <h1>Live Action Recognition Prediction Stream</h1>
+    <div id="controls">
+        <button id="startBtn">Start Streaming</button>
+        <button id="stopBtn" disabled>Stop Streaming</button>
+    </div>
+    <img id="video" alt="Live Stream" />
+    <div id="status">Status: Not Streaming</div>
+
+    <script>
+        let ws;
+        const video = document.getElementById('video');
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const statusText = document.getElementById('status');
+        const darkModeToggle = document.getElementById('darkModeToggle');
+        let isDarkMode = true;
+
+        function updateStatus(message, color) {
+            statusText.textContent = `Status: ${message}`;
+            statusText.style.color = color;
+        }
+
+        function startStreaming() {
+            ws = new WebSocket('ws://localhost:8000/ws/video');
+            ws.binaryType = 'blob';
+
+            ws.onopen = () => {
+                console.log('WebSocket connection opened');
+                startBtn.disabled = true;
+                stopBtn.disabled = false;
+                updateStatus('Streaming', '#28a745');
+            };
+
+            ws.onmessage = (event) => {
+                const blob = new Blob([event.data], { type: 'image/jpeg' });
+                const url = URL.createObjectURL(blob);
+                video.src = url;
+            };
+
+            ws.onerror = (error) => console.error('WebSocket error:', error);
+
+            ws.onclose = () => {
+                console.log('WebSocket connection closed');
+                startBtn.disabled = false;
+                stopBtn.disabled = true;
+                updateStatus('Not Streaming', '#dc3545');
+            };
+        }
+
+        startBtn.addEventListener('click', startStreaming);
+
+        stopBtn.addEventListener('click', () => {
+            if (ws) {
+                ws.close();
+            }
+        });
+
+        darkModeToggle.addEventListener('click', () => {
+            isDarkMode = !isDarkMode;
+            document.body.style.backgroundColor = isDarkMode ? '#121212' : '#f0f0f0';
+            document.body.style.color = isDarkMode ? '#f0f0f0' : '#333';
+            darkModeToggle.style.backgroundColor = isDarkMode ? '#282828' : '#cccccc';
+            darkModeToggle.style.color = isDarkMode ? '#f0f0f0' : '#333';
+        });
+    </script>
+</body>
+</html>
