@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: my-fastapi-app
+    env: python
+    region: oregon
+    plan: free
+    buildCommand: |
+      pip install --upgrade pip
+      pip install tensorflow-intel==2.17.0 --extra-index-url=https://pypi.org/simple
+      pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port 10000
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.10.11
